@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AK Cursor Switcher</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    ::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    html, body {
+      overflow: hidden !important;
+      height: 100vh !important;
+      width: 100vw !important;
+      background-color: #020617;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      overscroll-behavior: none !important;
+      touch-action: none;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      letter-spacing: 0.01em;
+    }
+
+    .flex-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .input-text {
+      flex: 1;
+      height: 38px;
+      background-color: #020617;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0 12px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-text:focus {
+      border-color: #06b6d4;
+      box-shadow: 0 0 0 1px #06b6d4;
+    }
+    .input-text::placeholder {
+      color: #64748b;
+    }
+
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .select-input {
+      width: 100%;
+      height: 38px;
+      appearance: none;
+      -webkit-appearance: none;
+      background-color: #020617;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0 32px 0 12px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .select-input:focus {
+      border-color: #06b6d4;
+      box-shadow: 0 0 0 1px #06b6d4;
+    }
+
+    .select-chevron {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .checkbox-input {
+      width: 16px;
+      height: 16px;
+      accent-color: #06b6d4;
+      cursor: pointer;
+    }
+    .checkbox-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #cbd5e1;
+      cursor: pointer;
+    }
+
+    .status-box {
+      background-color: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .indicator-ping {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: #06b6d4;
+      position: relative;
+    }
+    .indicator-ping.active {
+      background-color: #10b981;
+    }
+    .status-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #22d3ee;
+    }
+    .status-label.active {
+      color: #34d399;
+    }
+
+    .btn {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background-color 0.15s, transform 0.08s, opacity 0.15s;
+      border: none;
+      outline: none;
+      white-space: nowrap;
+    }
+    .btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #06b6d4, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #22d3ee, #3b82f6);
+    }
+
+    .btn-secondary {
+      background-color: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background-color: #334155;
+    }
+
+    .btn-action-prts {
+      background: linear-gradient(135deg, #0891b2, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
+    }
+    .btn-action-prts:hover:not(:disabled) {
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      background-color: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+    .badge-cyan {
+      background-color: #083344;
+      color: #67e8f9;
+      border-color: #155e75;
+    }
+    .badge-slate {
+      background-color: #1e293b;
+      color: #cbd5e1;
+      border-color: #475569;
+    }
+
+    .prts-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .prts-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .prts-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .prts-desc {
+      font-size: 12px;
+      line-height: 1.45;
+      color: #cbd5e1;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #94a3b8;
+      padding-top: 10px;
+      border-top: 1px solid #0f172a;
+    }
+    .footer code {
+      font-family: monospace;
+      font-size: 11px;
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      color: #67e8f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.hidden {
+      display: none;
+    }
+    .modal-card {
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 18px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-body {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .path-box {
+      background-color: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+    .path-label {
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .path-dir {
+      color: #94a3b8;
+      font-size: 11px;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      line-height: 1.4;
+    }
+    .path-change {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      line-height: 1.4;
+    }
+    .path-file-old {
+      color: #f87171;
+    }
+    .path-arrow {
+      color: #06b6d4;
+      font-weight: bold;
+    }
+    .path-file-new {
+      color: #34d399;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="main-layout">
+    
+    <!-- Main Settings Card -->
+    <div class="card">
+      
+      <!-- Target Process / Executable -->
+      <div class="form-group">
+        <label class="form-label">Game Executable / Process</label>
+        <div class="flex-row">
+          <input 
+            type="text" 
+            id="targetProcess" 
+            placeholder="Arknights.exe"
+            class="input-text"
+            onchange="onConfigChange()"
+          >
+          <button 
+            onclick="browseExe()"
+            class="btn btn-secondary"
+          >
+            Browse...
+          </button>
+        </div>
+      </div>
+
+      <!-- Scheme and Size Grid -->
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Cursor Scheme</label>
+          <div class="select-wrapper">
+            <select 
+              id="cursorScheme" 
+              class="select-input"
+              onchange="onConfigChange()"
+            >
+              <option value="">Loading schemes...</option>
+            </select>
+            <div class="select-chevron">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cursor Size</label>
+          <div class="select-wrapper">
+            <select 
+              id="cursorSize" 
+              class="select-input"
+              onchange="onConfigChange()"
+            >
+              <option value="1">1 - Normal (32px)</option>
+              <option value="2">2 - Medium (48px)</option>
+              <option value="3">3 - Large (64px)</option>
+              <option value="4">4 - Extra Large (80px)</option>
+              <option value="5">5 - Huge (96px)</option>
+              <option value="6">6 - Maximum (112px)</option>
+            </select>
+            <div class="select-chevron">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto-Switch Checkbox -->
+      <label class="checkbox-row">
+        <input 
+          type="checkbox" 
+          id="autoSwitch" 
+          class="checkbox-input"
+          onchange="onConfigChange()"
+        >
+        <span class="checkbox-label">Auto-switch scheme when target process is running</span>
+      </label>
+
+      <!-- Live Status Box -->
+      <div class="status-box">
+        <div class="status-left">
+          <div id="statusDot" class="indicator-ping"></div>
+          <span id="statusText" class="status-label">Initializing...</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid-3">
+        <button 
+          onclick="applyScheme()" 
+          title="Apply selected cursor scheme immediately"
+          class="btn btn-primary"
+        >
+          Apply Scheme
+        </button>
+        <button 
+          onclick="restoreDefaults()" 
+          title="Restore Windows default cursor configuration"
+          class="btn btn-secondary"
+        >
+          Reset Defaults
+        </button>
+        <button 
+          onclick="hideToTray()" 
+          title="Minimize window to system notification tray"
+          class="btn btn-secondary"
+        >
+          Hide to Tray
+        </button>
+      </div>
+
+    </div>
+
+    <!-- PRTS Cursor Card -->
+    <div class="card">
+      <div class="prts-header">
+        <div class="prts-title-group">
+          <span style="color: #22d3ee; display: flex; align-items: center;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+            </svg>
+          </span>
+          <span id="prtsTitle" class="prts-title">PRTS Cursor</span>
+        </div>
+        <span id="fixBadge" class="badge">
+          Checking...
+        </span>
+      </div>
+
+      <p class="prts-desc">
+        Toggle Arknights PRTS cursor bundle to switch between in-game cursor and native Windows hardware cursor.
+      </p>
+
+      <button 
+        id="btnFix"
+        onclick="confirmToggleFix()" 
+        disabled
+        class="btn btn-secondary"
+        style="width: 100%;"
+      >
+        <span id="btnFixText">Locate Arknights.exe First</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Footer Tip -->
+  <div class="footer">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span>💡 Run</span>
+      <code>Arknights.exe</code>
+      <span>directly (not via launcher)</span>
+    </div>
+    <span class="badge" style="font-size: 10px; padding: 2px 8px;">v0.1.0</span>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="modalTitle" class="modal-title">
+        <span>⚠️</span> Confirm Action
+      </h3>
+      <p id="modalBody" class="modal-body"></p>
+      <div class="modal-actions">
+        <button onclick="closeModal()" class="btn btn-secondary" style="height: 34px;">
+          Cancel
+        </button>
+        <button id="modalConfirmBtn" onclick="executeModalAction()" class="btn btn-primary" style="height: 34px;">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Hard disable all scroll gestures
+    window.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+    window.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+    let currentConfig = {};
+    let pendingFixAction = null;
+
+    function sendIpc(action, payload = {}) {
+      if (window.ipc) {
+        window.ipc.postMessage(JSON.stringify({ action, ...payload }));
+      }
+    }
+
+    // Called by Rust to update UI state
+    window.updateState = function(state) {
+      if (state.config) {
+        currentConfig = state.config;
+        document.getElementById('targetProcess').value = state.config.target_process || 'Arknights.exe';
+        document.getElementById('cursorSize').value = state.config.size || '1';
+        document.getElementById('autoSwitch').checked = !!state.config.auto_switch;
+      }
+
+      if (state.schemes) {
+        const select = document.getElementById('cursorScheme');
+        const selected = state.config ? state.config.scheme : select.value;
+        select.innerHTML = '';
+        state.schemes.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name;
+          if (name.toLowerCase() === (selected || '').toLowerCase()) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+      }
+
+      if (state.status) {
+        const text = document.getElementById('statusText');
+        const dot = document.getElementById('statusDot');
+        text.textContent = state.status;
+        const isRunning = state.status.includes('Active') || state.status.includes('running');
+        if (isRunning) {
+          dot.className = 'indicator-ping active';
+          text.className = 'status-label active';
+        } else {
+          dot.className = 'indicator-ping';
+          text.className = 'status-label';
+        }
+      }
+
+      if (state.fixStatus) {
+        const btn = document.getElementById('btnFix');
+        const btnText = document.getElementById('btnFixText');
+        const badge = document.getElementById('fixBadge');
+        const title = document.getElementById('prtsTitle');
+
+        if (state.fixStatus === 'ActiveSoftwareCursor') {
+          btn.disabled = false;
+          btn.className = 'btn btn-action-prts';
+          btnText.textContent = 'Disable PRTS Cursor';
+          if (title) title.textContent = 'Disable PRTS Cursor';
+          badge.textContent = 'Enabled (.bin)';
+          badge.className = 'badge badge-cyan';
+        } else if (state.fixStatus === 'FixedDisabled') {
+          btn.disabled = false;
+          btn.className = 'btn btn-secondary';
+          btnText.textContent = 'Enable PRTS Cursor';
+          if (title) title.textContent = 'Enable PRTS Cursor';
+          badge.textContent = 'Disabled (.disabled)';
+          badge.className = 'badge badge-slate';
+        } else {
+          btn.disabled = true;
+          btn.className = 'btn btn-secondary';
+          btnText.textContent = 'Locate Arknights.exe First';
+          if (title) title.textContent = 'PRTS Cursor';
+          badge.textContent = 'Not Found';
+          badge.className = 'badge';
+        }
+      }
+    };
+
+    function onConfigChange() {
+      const cfg = {
+        target_process: document.getElementById('targetProcess').value.trim() || 'Arknights.exe',
+        scheme: document.getElementById('cursorScheme').value,
+        size: parseInt(document.getElementById('cursorSize').value, 10) || 1,
+        auto_switch: document.getElementById('autoSwitch').checked,
+      };
+      sendIpc('save_config', { config: cfg });
+    }
+
+    function applyScheme() {
+      onConfigChange();
+      sendIpc('apply_now');
+    }
+
+    function restoreDefaults() {
+      sendIpc('restore_defaults');
+    }
+
+    function browseExe() {
+      sendIpc('browse_exe');
+    }
+
+    function hideToTray() {
+      sendIpc('hide_to_tray');
+    }
+
+    function confirmToggleFix() {
+      sendIpc('request_fix_info');
+    }
+
+    window.showFixConfirmation = function(info) {
+      document.getElementById('modalTitle').innerHTML = info.isDisabling 
+        ? '<span>⚡</span> Disable PRTS Cursor' 
+        : '<span>🔄</span> Enable PRTS Cursor';
+      document.getElementById('modalBody').innerHTML = info.message;
+      document.getElementById('modalConfirmBtn').textContent = info.isDisabling ? 'Disable Cursor' : 'Enable Cursor';
+      pendingFixAction = info.action;
+      document.getElementById('confirmModal').classList.remove('hidden');
+    };
+
+    function closeModal() {
+      document.getElementById('confirmModal').classList.add('hidden');
+      pendingFixAction = null;
+    }
+
+    function executeModalAction() {
+      if (pendingFixAction) {
+        sendIpc('execute_fix', { action: pendingFixAction });
+      }
+      closeModal();
+    }
+
+    // Request initial state on load
+    document.addEventListener('DOMContentLoaded', () => {
+      sendIpc('init');
+    });
+  </script>
+</body>
+</html>
