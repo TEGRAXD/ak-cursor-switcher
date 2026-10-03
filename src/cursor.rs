@@ -2,6 +2,8 @@
 use std::collections::HashMap;
 #[cfg(target_os = "windows")]
 use std::path::Path;
+#[cfg(target_os = "windows")]
+use std::sync::Mutex;
 
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Environment::ExpandEnvironmentStringsW;
@@ -75,6 +77,18 @@ const CURSOR_NAMES: [&str; 17] = [
     "Pin",
     "Person",
 ];
+
+#[derive(Debug, Clone)]
+pub struct CursorBackup {
+    pub scheme_name: String,
+    pub scheme_source: Option<u32>,
+    pub cursor_base_size: Option<u32>,
+    pub cursor_size: u32,
+    pub slots: Vec<(String, Option<String>)>,
+}
+
+#[cfg(target_os = "windows")]
+static SAVED_BACKUP: Mutex<Option<CursorBackup>> = Mutex::new(None);
 
 // Converts a Rust &str (UTF-8) into a null-terminated UTF-16 buffer (Vec<u16>)
 // required by Windows Win32 *W (wide) APIs.
@@ -273,6 +287,14 @@ fn get_scheme_data_and_source(scheme_name: &str) -> Option<(String, u32)> {
 // 5. Calls apply_cursor_size to instantly inject newly scaled cursor handles into Windows.
 #[cfg(target_os = "windows")]
 pub fn apply_scheme_and_size(scheme_name: &str, size: u32) -> bool {
+    // Ensure initial baseline cursor is backed up before applying new settings
+    if let Ok(lock) = SAVED_BACKUP.lock() {
+        if lock.is_none() {
+            drop(lock);
+            save_current();
+        }
+    }
+
     println!("Applying scheme '{scheme_name}' with size {size}...");
 
     // Convert input size (1..16 or 32..112) into (slider_index, base_pixel_size)
@@ -327,21 +349,78 @@ pub fn apply_scheme_and_size(scheme_name: &str, size: u32) -> bool {
     true
 }
 
-// Restores default Windows cursors:
-// 1. Clears individual slot overrides from HKCU\Control Panel\Cursors.
-// 2. Sets (Default) back to "Windows Default" and Scheme Source to 0.
-// 3. Broadcasts SPI_SETCURSORS to notify Windows subsystem.
-// 4. Reloads system cursors at base 32px.
+// Restores previous cursor configuration from backup:
+// 1. Restores all 17 individual cursor slot overrides.
+// 2. Restores (Default) scheme name, Scheme Source, and CursorBaseSize.
+// 3. Restores CursorSize in HKCU\Software\Microsoft\Accessibility.
+// 4. Broadcasts SPI_SETCURSORS to notify Windows subsystem.
+// 5. Reloads system cursors at restored pixel dimensions.
 #[cfg(target_os = "windows")]
 pub fn restore_scheme() -> bool {
     println!("Restoring previous cursor configuration...");
 
+    let backup_opt = if let Ok(lock) = SAVED_BACKUP.lock() {
+        lock.clone()
+    } else {
+        None
+    };
+
+    if let Some(backup) = backup_opt {
+        if let Some(hkey) = reg_open_write(HKEY_CURRENT_USER, r"Control Panel\Cursors") {
+            for (slot_name, val_opt) in &backup.slots {
+                if let Some(val) = val_opt {
+                    reg_set_string(hkey, slot_name, val, true);
+                } else {
+                    reg_delete_value(hkey, slot_name);
+                }
+            }
+
+            if !backup.scheme_name.is_empty() {
+                reg_set_string(hkey, "", &backup.scheme_name, false);
+            } else {
+                reg_delete_value(hkey, "");
+            }
+
+            if let Some(src) = backup.scheme_source {
+                reg_set_dword(hkey, "Scheme Source", src);
+            } else {
+                reg_delete_value(hkey, "Scheme Source");
+            }
+
+            if let Some(base_sz) = backup.cursor_base_size {
+                reg_set_dword(hkey, "CursorBaseSize", base_sz);
+            } else {
+                reg_delete_value(hkey, "CursorBaseSize");
+            }
+
+            unsafe { RegCloseKey(hkey) };
+        }
+
+        if let Some(hkey) = reg_open_write(HKEY_CURRENT_USER, r"Software\Microsoft\Accessibility") {
+            reg_set_dword(hkey, "CursorSize", backup.cursor_size);
+            unsafe { RegCloseKey(hkey) };
+        }
+
+        unsafe {
+            SystemParametersInfoW(SPI_SETCURSORS, 0, std::ptr::null_mut(), 0);
+        }
+
+        let base_px = backup
+            .cursor_base_size
+            .unwrap_or(32 + (backup.cursor_size.saturating_sub(1)) * 16);
+        apply_cursor_size(base_px);
+
+        println!("Previous cursor configuration successfully restored!");
+        return true;
+    }
+
+    // Fallback if no backup is available
     if let Some(hkey) = reg_open_write(HKEY_CURRENT_USER, r"Control Panel\Cursors") {
         for name in CURSOR_NAMES {
             reg_delete_value(hkey, name);
         }
         reg_set_string(hkey, "", "Windows Default", false);
-        reg_set_dword(hkey, "Scheme Source", 0);
+        reg_set_dword(hkey, "Scheme Source", 1);
         reg_set_dword(hkey, "CursorBaseSize", 32);
         unsafe { RegCloseKey(hkey) };
     }
@@ -356,19 +435,63 @@ pub fn restore_scheme() -> bool {
     }
 
     apply_cursor_size(32);
-
-    println!("Previous cursor configuration restored!");
     true
 }
 
+// Saves a snapshot of the current active cursor configuration into memory.
 #[cfg(target_os = "windows")]
 pub fn save_current() -> bool {
+    let mut backup = CursorBackup {
+        scheme_name: String::new(),
+        scheme_source: None,
+        cursor_base_size: None,
+        cursor_size: 1,
+        slots: Vec::with_capacity(CURSOR_NAMES.len()),
+    };
+
+    if let Some(hkey) = reg_open_read(HKEY_CURRENT_USER, r"Control Panel\Cursors") {
+        if let Some(name) = reg_get_string(hkey, "") {
+            backup.scheme_name = name;
+        }
+        backup.scheme_source = reg_get_dword(hkey, "Scheme Source");
+        backup.cursor_base_size = reg_get_dword(hkey, "CursorBaseSize");
+
+        for &slot_name in &CURSOR_NAMES {
+            let val = reg_get_string(hkey, slot_name);
+            backup.slots.push((slot_name.to_string(), val));
+        }
+
+        unsafe { RegCloseKey(hkey) };
+    }
+
+    if let Some(hkey) = reg_open_read(HKEY_CURRENT_USER, r"Software\Microsoft\Accessibility") {
+        if let Some(sz) = reg_get_dword(hkey, "CursorSize") {
+            backup.cursor_size = sz;
+        }
+        unsafe { RegCloseKey(hkey) };
+    }
+
+    println!(
+        "Saved current cursor state: scheme='{}', source={:?}, base_size={:?}, size={}",
+        backup.scheme_name, backup.scheme_source, backup.cursor_base_size, backup.cursor_size
+    );
+
+    if let Ok(mut lock) = SAVED_BACKUP.lock() {
+        *lock = Some(backup);
+    }
     true
 }
 
 // Sets cursor size without switching current active scheme.
 #[cfg(target_os = "windows")]
 pub fn set_cursor_size(size: u32) -> bool {
+    // Ensure initial baseline cursor is backed up before applying new settings
+    if let Ok(lock) = SAVED_BACKUP.lock() {
+        if lock.is_none() {
+            drop(lock);
+            save_current();
+        }
+    }
     let (cursor_size, cursor_base_size) = if size <= 16 {
         let s = size.max(1);
         (s, 32 + (s - 1) * 16)

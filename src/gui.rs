@@ -86,8 +86,9 @@ pub fn run_gui() {
 
     let window = WindowBuilder::new()
         .with_title("AK Cursor Switcher")
-        .with_inner_size(LogicalSize::new(550.0, 540.0))
+        .with_inner_size(LogicalSize::new(670.0, 595.0))
         .with_resizable(false)
+        .with_maximizable(false)
         .build(&event_loop)
         .expect("Failed to create tao window");
 
@@ -206,7 +207,7 @@ pub fn run_gui() {
                 }
                 "restore_defaults" => {
                     cursor::restore_scheme();
-                    *status_clone.lock().unwrap() = String::from("Restored Windows defaults");
+                    *status_clone.lock().unwrap() = String::from("Restored original cursor");
                     if let Some(wv) = webview_ref.lock().unwrap().as_ref() {
                         let _ = wv.evaluate_script(&format!(
                             "window.updateState({{ status: '{}' }});",
