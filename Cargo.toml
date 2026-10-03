@@ -5,6 +5,13 @@ edition = "2024"
 description = "Lightweight cursor switcher and stuttering fix utility for Arknights PC client"
 
 [dependencies]
+wry = "0.48"
+tao = "0.31"
+tray-icon = "0.19"
+muda = "0.15"
+rfd = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 windows-sys = { version = "0.61.2", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Shell",
@@ -12,6 +19,7 @@ windows-sys = { version = "0.61.2", features = [
     "Win32_UI_Controls_Dialogs",
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_Graphics_Gdi",
+    "Win32_Graphics_Dwm",
     "Win32_Foundation",
     "Win32_System_LibraryLoader",
     "Win32_System_Diagnostics_ToolHelp",

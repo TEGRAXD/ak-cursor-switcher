@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
 // Application configuration persisted to `settings.ini` next to the executable.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AppConfig {
     pub target_process: String,
     pub scheme: String,
