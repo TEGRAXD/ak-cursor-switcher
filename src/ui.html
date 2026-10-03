@@ -407,24 +407,24 @@
   </style>
 </head>
 <body>
-  
+
   <div class="main-layout">
-    
+
     <!-- Main Settings Card -->
     <div class="card">
-      
+
       <!-- Target Process / Executable -->
       <div class="form-group">
         <label class="form-label">Game Executable / Process</label>
         <div class="flex-row">
-          <input 
-            type="text" 
-            id="targetProcess" 
+          <input
+            type="text"
+            id="targetProcess"
             placeholder="Arknights.exe"
             class="input-text"
             onchange="onConfigChange()"
           >
-          <button 
+          <button
             onclick="browseExe()"
             class="btn btn-secondary"
           >
@@ -438,8 +438,8 @@
         <div class="form-group">
           <label class="form-label">Cursor Scheme</label>
           <div class="select-wrapper">
-            <select 
-              id="cursorScheme" 
+            <select
+              id="cursorScheme"
               class="select-input"
               onchange="onConfigChange()"
             >
@@ -456,8 +456,8 @@
         <div class="form-group">
           <label class="form-label">Cursor Size</label>
           <div class="select-wrapper">
-            <select 
-              id="cursorSize" 
+            <select
+              id="cursorSize"
               class="select-input"
               onchange="onConfigChange()"
             >
@@ -479,9 +479,9 @@
 
       <!-- Auto-Switch Checkbox -->
       <label class="checkbox-row">
-        <input 
-          type="checkbox" 
-          id="autoSwitch" 
+        <input
+          type="checkbox"
+          id="autoSwitch"
           class="checkbox-input"
           onchange="onConfigChange()"
         >
@@ -498,22 +498,22 @@
 
       <!-- Action Buttons -->
       <div class="grid-3">
-        <button 
-          onclick="applyScheme()" 
+        <button
+          onclick="applyScheme()"
           title="Apply selected cursor scheme immediately"
           class="btn btn-primary"
         >
           Apply Scheme
         </button>
-        <button 
-          onclick="restoreDefaults()" 
+        <button
+          onclick="restoreDefaults()"
           title="Restore your original cursor before changes"
           class="btn btn-secondary"
         >
           Restore Cursor
         </button>
-        <button 
-          onclick="hideToTray()" 
+        <button
+          onclick="hideToTray()"
           title="Minimize window to system notification tray"
           class="btn btn-secondary"
         >
@@ -543,9 +543,9 @@
         Toggle Arknights PRTS cursor bundle to switch between in-game cursor and native Windows hardware cursor.
       </p>
 
-      <button 
+      <button
         id="btnFix"
-        onclick="confirmToggleFix()" 
+        onclick="confirmToggleFix()"
         disabled
         class="btn btn-secondary"
         style="width: 100%;"
@@ -563,7 +563,7 @@
       <code>Arknights.exe</code>
       <span>directly (not via launcher)</span>
     </div>
-    <span class="badge" style="font-size: 10px; padding: 2px 8px;">v0.1.0</span>
+    <span class="badge" style="font-size: 10px; padding: 2px 8px;">v0.2.0</span>
   </div>
 
   <!-- Confirmation Modal -->
@@ -699,8 +699,8 @@
     }
 
     window.showFixConfirmation = function(info) {
-      document.getElementById('modalTitle').innerHTML = info.isDisabling 
-        ? '<span>⚡</span> Disable PRTS Cursor' 
+      document.getElementById('modalTitle').innerHTML = info.isDisabling
+        ? '<span>⚡</span> Disable PRTS Cursor'
         : '<span>🔄</span> Enable PRTS Cursor';
       document.getElementById('modalBody').innerHTML = info.message;
       document.getElementById('modalConfirmBtn').textContent = info.isDisabling ? 'Disable Cursor' : 'Enable Cursor';
