@@ -1,4 +1,4 @@
-# ak-cursor-switcher (AK Cursor Switcher)
+# Arknights Cursor Switcher
 
 Lightweight native Windows utility to disable PRTS software cursor, fix mouse stuttering during loading screens, and auto-scale custom cursor schemes for Arknights PC Client, written in Rust with zero heavy GUI dependencies.
 
@@ -31,6 +31,11 @@ Because software cursors render inside the game loop, mouse movement freezes and
 2. Windows hardware cursor takes over immediately, providing 100% smooth, stutter-free mouse tracking at your monitor's full refresh rate even during heavy loading screens.
 3. Clicking **"Disable PRTS Cursor"** performs this rename with confirmation.
 4. Clicking **"Restore PRTS Cursor"** renames the file back to `.bin` whenever you want the default in-game cursor restored.
+
+### Notes & Usage Tips
+
+- **Client-Side Asset Toggle**: Simply renames an asset bundle on disk so Windows renders its native cursor. No memory injection, hooks, or executable modifications.
+- **Direct Launch**: Run `Arknights.exe` directly (or via desktop shortcut) rather than the official launcher. The launcher's startup file verification may detect the renamed file and attempt to re-download it.
 
 ## Architecture Flow
 
