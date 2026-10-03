@@ -159,6 +159,7 @@ fn reg_get_string(hkey: HKEY, value_name: &str) -> Option<String> {
 }
 
 // Reads a 32-bit unsigned integer (REG_DWORD) from an open registry key.
+#[allow(dead_code)]
 #[cfg(target_os = "windows")]
 fn reg_get_dword(hkey: HKEY, value_name: &str) -> Option<u32> {
     let wide = to_wide(value_name);
@@ -466,6 +467,7 @@ pub fn get_available_schemes() -> Vec<String> {
 }
 
 // Queries the currently active cursor scheme name from HKCU\Control Panel\Cursors (Default value).
+#[allow(dead_code)]
 #[cfg(target_os = "windows")]
 pub fn get_current_active_scheme() -> Option<String> {
     if let Some(hkey) = reg_open_read(HKEY_CURRENT_USER, r"Control Panel\Cursors") {
@@ -481,6 +483,7 @@ pub fn get_current_active_scheme() -> Option<String> {
 }
 
 // Queries the current accessibility cursor size setting (1..16).
+#[allow(dead_code)]
 #[cfg(target_os = "windows")]
 pub fn get_current_cursor_size() -> u32 {
     if let Some(hkey) = reg_open_read(HKEY_CURRENT_USER, r"Software\Microsoft\Accessibility") {
